@@ -1,0 +1,231 @@
+#include <iostream>
+#include <vector>
+#include <algorithm>
+#include <cassert>
+using namespace std;
+
+using  i64 = int64_t;
+using  pr  = pair<i64, i64>;
+
+template<class T>
+class  FareyNumber
+{
+    using  F = FareyNumber<T>;
+  private:
+    T  num, den;
+
+  public:
+    // CONSTRUCTORS
+    FareyNumber() : num( 0 ), den( 1 ) {}
+    FareyNumber( T a ) : num( a ), den( 1 ) {}
+    FareyNumber( T a, T b ) : num( a ), den( b ) { normalize(); }
+    FareyNumber( const F &a ) : num( a.num ), den( a.den ) {;}
+
+    // GETS AND SETS
+    T  get_num() const { return  num; }
+    T  get_den() const { return  den; }
+    pair<T, T>  get_pair() const { return { num, den }; }
+
+    // MATH OPERATORS
+    static void  norm( T& a, T& b )  {
+        T  g = __gcd( abs( a ), abs( b ) );
+        a /= g;  b /= g;
+        if( b < 0 )  { a = -a;  b = -b; }
+    }
+
+    void  normalize() { norm( num, den ); }
+
+    F operator  - () const { return F( -num, den ); }
+    friend bool operator  < ( const F& lhs, const F& rhs )  {
+        return  __int128_t( lhs.num ) * rhs.den < __int128_t( rhs.num ) * lhs.den;
+    }
+    friend bool operator == ( const F& lhs, const F& rhs )  {
+        return  lhs.num == rhs.num && lhs.den == rhs.den;
+    }
+
+    static F  mediant( const F &a, const F &b )  {
+        F  m( a );   m.num += b.num;   m.den += b.den;
+        return  m;
+    }
+
+    // Counts Farey numbers 0 < a/b < 1 where b <= k, 1 < k <= N
+    // SOLVES Hackerrank Project Euler 72
+    static vector<i64>  countFarey( i64 N )  {
+        vector<i64>  answer( N + 1 );
+        vector<i64>  phi( N + 1 );
+        for( i64 i=0 ; i<=N ; ++i )   phi[i] = i;
+        i64  result = 0;
+        for( i64 i=2 ; i<=N ; ++i )  {
+            if( phi[i] == i )
+                for( i64 j=i ; j<=N ; j += i )
+                    phi[j] = phi[j] / i * ( i - 1 );
+            result += phi[i];
+            answer[i] = result;
+        }
+        return  answer;
+    }
+
+    // Counts Farey numbers  0 < a/b <= num/den  where b <= maxD
+    // SOLVES Hackerrank Project Euler 73
+    static i64  rank( i64 num, i64 den, i64 maxD )  {
+        vector<i64>  data( maxD + 1 );
+        for( i64 i=0 ; i<=maxD ; ++i )   data[i] = i * num/den;
+        for( i64 i=1 ; i<=maxD ; ++i )
+            for( i64 j=2*i ; j<=maxD ; j+=i )
+                data[j] -= data[i];
+        i64  tally = 0;
+        for( auto x : data )   tally += x;
+        return  tally;
+    }
+
+    // FIND LEFT FAREY NEIGHBOR OF a IN ROW OF TREE CORRESPONDING TO LIMIT
+    // SOLVES HACKERRANK EULER 71
+    static F  closest( const F &a, i64 limit )  {
+        i64  leftD = 1,  rightD = 1;
+        F    left( 0 ),  right( 1 );
+
+        while( leftD + rightD <= limit )  {
+            F  med = mediant( left, right );
+            if( med < a )   {
+                left  = med;
+                leftD = med.den;
+            }
+            else  {
+                right  = med;
+                rightD = med.den;
+                if( right == a )   break;
+            }
+        }
+        if( limit >= leftD + rightD )  {
+            i64  repeat = 1 + ( limit - leftD - rightD ) / rightD;
+            left.num += repeat * right.num;
+            left.den += repeat * right.den;
+        }
+        return  left;
+    }
+};
+using  Farey = FareyNumber<i64>;
+
+template<class T>
+class  SternBrocotTree
+{
+    using  F = FareyNumber<T>;
+
+  public:
+    static vector< pair<char, i64> >  encode_path( F x )  {
+        vector< pair<char, i64> >  res;
+        T  a = x.get_num(),  b = x.get_den();
+        while( a != 1  ||  b != 1 )  {
+            if( a > b )  {
+                T  tmp = ( a - 1 ) / b;
+                res.emplace_back( 'R', tmp );
+                a -= tmp * b;
+            }
+            else  {
+                T  tmp = ( b - 1 ) / a;
+                res.emplace_back( 'L', tmp );
+                b -= tmp * a;
+            }
+        }
+        return  res;
+    }
+
+    static F  decode_path( vector< pair<char, i64> > path, F s = 1 )  {
+        reverse( path.begin(), path.end() );
+        T  a = s.get_num(),  b = s.get_den();
+        for( const auto &p : path )  {
+            if( p.first == 'R' )   a += b * p.second;
+            else  b += a * p.second;
+        }
+        return  F( a, b );
+    }
+
+    static F  lca( F x, F y )  {
+        auto  px = encode_path( x ),  py = encode_path( y );
+        vector< pair<char, i64> >  res;
+        for( size_t i=0 ; i<min( px.size(), py.size() ) ; ++i )  {
+            const auto&  a = px[i],  b = py[i];
+            if( a.first != b.first )   break;
+            res.emplace_back( a.first, min( a.second, b.second ) );
+            if( a.second != b.second )   break;
+        }
+        return  decode_path( res );
+    }
+
+    static F  ancestor( F x, i64 k )  {
+        if( k == 0 )   return  1;
+        auto  px = encode_path( x );
+        for( size_t i=0 ; i<px.size() ; ++i )  {
+            const i64  a = px[i].second;
+            if( a >= k )  {
+                px[i].second = k;
+                px.erase( px.begin() + i + 1, px.end() );
+                return  decode_path( px );
+            }
+            k -= a;
+        }
+        return  -1;
+    }
+
+    static pair<F, F>  range( F x )  {
+        auto  px = encode_path( x );
+        return { decode_path( px, {0, 1} ), decode_path( px, {1, 0} ) };
+    }
+
+    // CREDIT: hitonanode  https://judge.yosupo.jp/submission/220588
+    static pair<F, F>  rationalApprox( T N, T num, T den )  {
+        if( num == T( 0 ) )   return  { F( 0 , 1 ), F( 0, 1 ) };
+        T  p = 0,  q = 1,  r = 1,  s = 0;
+        bool  isLeft = false;
+
+        while( true )  {
+            T  maxSteps = num / den;
+
+            if( isLeft )  {
+                if( p > T(0) )   maxSteps = min( maxSteps, ( N - r ) / p );
+                maxSteps = min( maxSteps, ( N - s ) / q );
+                r += maxSteps * p;
+                s += maxSteps * q;
+            } else  {
+                maxSteps = min( maxSteps, ( N - p ) / r );
+                if( s > T( 0 ) )   maxSteps = min( maxSteps, ( N - q ) / s );
+                p += maxSteps * r;
+                q += maxSteps * s;
+            }
+
+            if( isLeft  &&  maxSteps == T( 0 ) )   break;
+
+            num -= maxSteps * den;
+
+            if( num == T( 0 ) )  {
+                if( isLeft )   return  { F( r, s ), F( r, s ) };
+                else           return  { F( p, q ), F( p, q ) };
+            }
+
+            swap( num, den );
+            isLeft = !isLeft;
+        }
+        return  { F( p, q ), F( r, s ) };
+    }
+};
+using  SBtree = SternBrocotTree<i64>;
+
+
+int  main()  {
+    cin.tie( 0 );
+    cin.sync_with_stdio( 0 );
+
+    int  tests;
+    cin >> tests;
+
+    while( tests-- )
+    {
+        i64  a, b, limit;
+        cin >> a >> b >> limit;
+
+        auto  p = Farey::closest( Farey( a, b ), limit );
+        cout << p.get_num() << " " << p.get_den() << '\n';
+    }
+
+    return  0;
+}
