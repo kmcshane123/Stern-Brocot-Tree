@@ -125,6 +125,8 @@ class  Mint
         return  is;
     }
 };
+constexpr int  MOD = 1000000007;
+using  mint = Mint<MOD>;
 
 class Cell
 {
@@ -270,27 +272,21 @@ class  Grid
     }
 };
 
-constexpr int  MOD = 1000000007;
-using mint = Mint<MOD>;
-
-vector<mint> berlekampMassey( const vector<mint> &S )
+vector<mint>  berlekampMassey( const vector<mint> &S )
 {
     size_t  n = S.size(),  L = 0,  m = 0;
     vector<mint>  C( n ), B( n ), T;
     C[0] = B[0] = 1;
     mint  b = 1;
 
-    for( size_t i=0 ; i<n ; ++i )
-   {
+    for( size_t i=0 ; i<n ; ++i )  {
        ++m;
        mint  d = S[i];
-       for( size_t j=1 ; j<=L ; ++j )
-           d += C[j]*S[i - j];
+       for( size_t j=1 ; j<=L ; ++j )   d += C[j]*S[i - j];
        if( d == 0 )    continue;
        T = C;
        mint  coef = d*b.inverse();
-       for( size_t j=m ; j<n ; ++j )
-           C[j] -= coef*B[j - m];
+       for( size_t j=m ; j<n ; ++j )    C[j] -= coef*B[j - m];
        if( 2*L > i )   continue;
        L = i + 1 - L;  B = T;  b = d;  m = 0;
     }
@@ -299,6 +295,7 @@ vector<mint> berlekampMassey( const vector<mint> &S )
     for( auto &x : C )   x = -x;
     return  C;
 }
+
 
 int  main()
 {
@@ -325,4 +322,3 @@ int  main()
 
     return  0;
 }
-
