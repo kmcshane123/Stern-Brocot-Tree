@@ -36,8 +36,7 @@ using namespace std;
 **/
 
 // ================= BEGIN Biggy ====================
-//        BASED ENTIRELY UPON:
-//        https://sites.google.com/site/indy256/algo_cpp/bigint
+
 class Biggy
 {
   private:
@@ -419,17 +418,14 @@ class Connection
     bool   m_connected;
 
   public:
-    Connection( Cell* r, Cell* n )
-    {
+    Connection( Cell* r, Cell* n )  {
         m_cell      = r;
         m_nbr       = n;
         m_connected = false;
 
-        if( m_cell->connections != 2  &&  m_nbr->connections != 2 )
-        {
+        if( m_cell->connections != 2  &&  m_nbr->connections != 2 )  {
             // CHECK FOR CYCLE
-            if( m_cell != m_nbr->pathEnd )
-            {
+            if( m_cell != m_nbr->pathEnd )  {
                 // UPDATE PATH ENDPOINTS
                 m_cellEnd          = m_cell->pathEnd;
                 m_nbrEnd           = m_nbr->pathEnd;
@@ -442,11 +438,9 @@ class Connection
         }
     }
 
-    ~Connection()
-    {
+    ~Connection()  {
         // RESTORE TO ORIGINAL CONDITION
-        if( m_connected )
-        {
+        if( m_connected )  {
             m_cellEnd->pathEnd = m_cell;
             m_nbrEnd->pathEnd  = m_nbr;
             --m_cell->connections;
@@ -553,12 +547,11 @@ int  main()
 
     constexpr int  MOD = 1000000007;
 
-    // R IS THE LARGER DIMENSION.  GRID IS 0-INDEXED.
     size_t  R, C;
     cin >> R >> C;
 
     Grid< Biggy >  G( R, C );
-    G.setEndpoints( 0, 0, 0, C - 1 );
+    G.setEndpoints( 0, 0, 0, 1 );
     auto  ans = G.solve();
 
     cout << "Rows: " << C << "  Cols: " << R << '\n';
@@ -567,3 +560,5 @@ int  main()
 
     return  0;
 }
+
+// GENERATES  https://oeis.org/A003763   CHECKED UP TO R = 16 C = 16
