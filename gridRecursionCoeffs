@@ -272,8 +272,7 @@ class  Grid
     }
 };
 
-vector<mint>  berlekampMassey( const vector<mint> &S )
-{
+vector<mint>  berlekampMassey( const vector<mint> &S )  {
     size_t  n = S.size(),  L = 0,  m = 0;
     vector<mint>  C( n ), B( n ), T;
     C[0] = B[0] = 1;
