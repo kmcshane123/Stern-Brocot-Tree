@@ -9,30 +9,32 @@ using namespace std;
   THIS CODE COUNTS NUMBER OF HAMILTONIAN PATHS CONNECTING
   ANY GIVEN STARTING CELL WITH ANY GIVEN ENDING CELL.
 
-  CELLS ARE 0-INDEXED.  TO EXCLUDE A CELL (a,b), ADD
-      grid[b-1][a-1].connections = 2;
+  R = NUMBER OF ROWS, C = NUMBER OF COLUMNS.
 
-  FOR HAMILTONIAN PATHS CONNECTING TOP LEFT WITH BOTTOM LEFT:
-      grid[0][0].connections   = 1;    // STARTING CELL
-      grid[0][C-1].connections = 1;    // ENDING CELL
-    FOR INPUT 4 X   generates http://oeis.org/A181688
-    FOR INPUT 5 X   generates http://oeis.org/A181689
+  CELLS ARE 0-INDEXED.  CELL ( a, b ) CAN BE EXCLUDED USING
+      grid.excludeCell( a, b );
+
+  FOR HAMILTONIAN PATHS CONNECTING TOP LEFT WITH TOP RIGHT:
+      STARTING CELL ( 0, 0 )
+      ENDING CELL   ( 0, C - 1 )
+    FOR INPUT  X 4   generates http://oeis.org/A181688
+    FOR INPUT  X 5   generates http://oeis.org/A181689
 
   FOR HAMILTONIAN PATHS CONNECTING OPPOSITE CORNERS:
-      grid[0][0].connections     = 1;    // STARTING CELL
-      grid[R-1][C-1].connections = 1;    // ENDING CELL
-    FOR INPUT 4 X   generates http://oeis.org/A014523
-    FOR INPUT 5 X   generates http://oeis.org/A014584
+      STARTING CELL ( 0, 0 )
+      ENDING CELL   ( R - 1, C - 1 )
+    FOR INPUT  X 4   generates http://oeis.org/A014523
+    FOR INPUT  X 5   generates http://oeis.org/A014584
 
   FOR HAMILTONIAN CYCLES:
-      grid[0][0].connections = 1;    // STARTING CELL
-      grid[0][1].connections = 1;    // ENDING CELL
-    FOR INPUT 4 X   generates http://oeis.org/A006864
-    FOR INPUT 5 X   generates http://oeis.org/A006865
-    FOR INPUT 6 X   generates http://oeis.org/A145401
-    FOR INPUT 7 X   generates http://oeis.org/A145416
-    FOR INPUT 8 X   generates http://oeis.org/A145418
-    FOR INPUT 9 X   generates http://oeis.org/A160149
+      STARTING CELL ( 0, 0 )
+      ENDING CELL   ( 0, 1 )
+    FOR INPUT  X 4   generates http://oeis.org/A006864
+    FOR INPUT  X 5   generates http://oeis.org/A006865
+    FOR INPUT  X 6   generates http://oeis.org/A145401
+    FOR INPUT  X 7   generates http://oeis.org/A145416
+    FOR INPUT  X 8   generates http://oeis.org/A145418
+    FOR INPUT  X 9   generates http://oeis.org/A160149
 **/
 
 using  u64 = uint64_t;
@@ -214,6 +216,8 @@ class  Grid
         grid[r1][c1].connections = 1;   grid[r2][c2].connections = 1;
     }
 
+    void  excludeCell( size_t r, size_t c ) { grid[r][c].connections = 2; }
+
     T  solve()  {
         T  solutions = 0;
 
@@ -295,7 +299,17 @@ vector<mint>  berlekampMassey( const vector<mint> &S )  {
     return  C;
 }
 
+// INPUT FORMAT:
+// TYPICALLY R >= C.  THIS CODE CALCULATES THE NUMBER OF HAMILTONIAN PATHS
+// FROM TOP LEFT TO TOP RIGHT IN GRIDS OF SIZE i x C FOR 1 <= i <= R.
+// GRID IS ZERO-INDEXED, SO TOP LEFT AND TOP RIGHT ARE (0, 0) AND (0, C-1).
+// TO ENSURE ENOUGH VALUES ARE GENERATED TO CALCULATE THE RECURSION,
+// SOME SAFE  R C  VALUES ARE
+// 10 4    20 5     30 6
+// 80 7   150 8    420 9 (TAKES 3 MIN ON MY LAPTOP)
 
+// THIS CODE GENERATES DATA FOR HACKERRANK PROJECT EULER+ PROBLEM 237.
+// NOTE:  NEED TO TRANSPOSE THE GRID TO FIT INTO PROPER INPUT FORMAT.
 int  main()
 {
     ios_base::sync_with_stdio( false );
@@ -305,9 +319,9 @@ int  main()
     cin >> R >> C;
 
     vector< Mint<MOD> >  tallys;
-    for( size_t i=1 ; i<R ; ++i )  {
+    for( size_t i=1 ; i<=R ; ++i )  {
         Grid< Mint<MOD> >  G( i, C );
-        G.setEndpoints( 0, 0, 0,  C - 1 );
+        G.setEndpoints( 0, 0, 0, C - 1 );
         auto  ans = G.solve();
         tallys.push_back( ans );
     }
@@ -315,8 +329,14 @@ int  main()
     // CALCULATE RECURSION COEFFICIENTS
     auto  ans = berlekampMassey( tallys );
 
-    cout << "SIZE: " << ans.size() << '\n';
-    for( size_t i=0 ; i<ans.size() ; ++i )  cout << ans[i] << " ";
+    size_t  sz = ans.size();
+
+    cout << "SIZE: " << sz << '\n';
+    cout << "PATH COUNTS:" << '\n';
+    for( size_t i=0 ; i<sz ; ++i )  cout << tallys[i] << " ";
+
+    cout << "\n\n" << "RECURSION COEFFICIENTS:" << '\n';
+    for( size_t i=0 ; i<sz ; ++i )  cout << ans[i] << " ";
     cout << '\n';
 
     return  0;
